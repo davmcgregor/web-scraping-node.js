@@ -4,7 +4,14 @@ const cheerio = require("cheerio");
 const searchUrl = `https://www.imdb.com/find?&ref_=nv_sr_sm&q=`;
 const movieUrl = `https://www.imdb.com/title/`;
 
+const searchCache = {};
+const movieCache = {};
+
 const searchMovies = (searchTerm) => {
+  if (searchCache[searchTerm]) {
+    console.log("Serving from cache:", searchTerm);
+    return Promise.resolve(searchCache[searchTerm]);
+  }
   return fetch(`${searchUrl}${searchTerm}`)
     .then((response) => response.text())
     .then((body) => {
@@ -25,11 +32,18 @@ const searchMovies = (searchTerm) => {
 
         movies.push(movie);
       });
+      searchCache[searchTerm] = movies;
+
       return movies;
     });
 };
 
 const getMovie = (imdbID) => {
+  if (movieCache[imdbID]) {
+    console.log("Serving from cache:", imdbID);
+    return Promise.resolve(movieCache[imdbID]);
+  }
+
   return fetch(`${movieUrl}${imdbID}`)
     .then((response) => response.text())
     .then((body) => {
@@ -95,7 +109,7 @@ const getMovie = (imdbID) => {
 
       const trailer = $("div.slate a").attr("href");
 
-      return {
+      const movie = {
         imdbID,
         title,
         runTime,
@@ -110,6 +124,10 @@ const getMovie = (imdbID) => {
         storyline,
         trailer: `https://www.imdb.com${trailer}`,
       };
+
+      movieCache[imdbID] = movie;
+
+      return movie;
     });
 };
 
