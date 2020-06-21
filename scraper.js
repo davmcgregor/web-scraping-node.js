@@ -1,10 +1,11 @@
 const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 
-const url = `https://www.imdb.com/find?&ref_=nv_sr_sm&q=`;
+const searchUrl = `https://www.imdb.com/find?&ref_=nv_sr_sm&q=`;
+const movieUrl = `https://www.imdb.com/title/`;
 
 const searchMovies = (searchTerm) => {
-  return fetch(`${url}${searchTerm}`)
+  return fetch(`${searchUrl}${searchTerm}`)
     .then((response) => response.text())
     .then((body) => {
       const movies = [];
@@ -18,7 +19,7 @@ const searchMovies = (searchTerm) => {
         const movie = {
           image: $image.attr("src"),
           title: $title.text(),
-          imdbID: null
+          imdbID: null,
         };
         if (searchimdbID !== null) movie.imdbID = searchimdbID[1];
 
@@ -28,8 +29,68 @@ const searchMovies = (searchTerm) => {
     });
 };
 
+const getMovie = (imdbID) => {
+  return fetch(`${movieUrl}${imdbID}`)
+    .then((response) => response.text())
+    .then((body) => {
+      const $ = cheerio.load(body);
+      const $title = $(".title_wrapper h1");
+
+      const title = $title
+        .first()
+        .contents()
+        .filter(function () {
+          return this.type === "text";
+        })
+        .text()
+        .trim();
+
+      const runTime = $("time").first().text().trim();
+
+      const genres = [];
+      $(".subtext")
+        .find("a")
+        .each(function (i, element) {
+          genres.push($(element).text());
+        });
+      genres.pop();
+
+      const releaseDate = $('a[title = "See more release dates"]')
+        .text()
+        .trim();
+
+      const imdbRating = $('span[itemprop="ratingValue"]').text();
+
+      const poster = $("div.poster a img")
+        .attr("src")
+        .split(/(?<=\@)/)[0];
+
+      const summary = $("div.summary_text").text().trim();
+
+      const director = $("h4")
+        .filter(function () {
+          return $(this).text().trim() === "Director:";
+        })
+        .next()
+        .text();
+
+      return {
+        imdbID,
+        title,
+        runTime,
+        genres,
+        releaseDate,
+        imdbRating,
+        poster,
+        summary,
+        director,
+      };
+    });
+};
+
 module.exports = {
   searchMovies,
+  getMovie,
 };
 
 // const top250 = () => {
