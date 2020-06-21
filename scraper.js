@@ -67,12 +67,33 @@ const getMovie = (imdbID) => {
 
       const summary = $("div.summary_text").text().trim();
 
-      const director = $("h4")
-        .filter(function () {
-          return $(this).text().trim() === "Director:";
-        })
-        .next()
-        .text();
+      function getItems(itemArray) {
+        return function (i, element) {
+          $(element)
+            .find("a")
+            .each(function (i, element) {
+              itemArray.push($(element).text().trim());
+            });
+        };
+      }
+
+      const directors = [];
+      $('div.credit_summary_item:contains("Director")').each(
+        getItems(directors)
+      );
+
+      const writers = [];
+      $('div.credit_summary_item:contains("Writer")').each(getItems(writers));
+
+      const stars = [];
+      $('div.credit_summary_item:contains("Stars")').each(getItems(stars));
+      stars.pop();
+
+      const storyline = $("#titleStoryLine div.inline.canwrap p span")
+        .text()
+        .trim();
+
+      const trailer = $("div.slate a").attr("href");
 
       return {
         imdbID,
@@ -83,7 +104,11 @@ const getMovie = (imdbID) => {
         imdbRating,
         poster,
         summary,
-        director,
+        directors,
+        writers,
+        stars,
+        storyline,
+        trailer: `https://www.imdb.com${trailer}`,
       };
     });
 };
