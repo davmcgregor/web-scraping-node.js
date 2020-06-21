@@ -13,10 +13,15 @@ const searchMovies = (searchTerm) => {
         const $element = $(element);
         const $image = $element.find("td a img");
         const $title = $element.find("td.result_text a");
+        const searchimdbID = $title.attr("href").match(/title\/(.*)\//);
+
         const movie = {
           image: $image.attr("src"),
           title: $title.text(),
+          imdbID: null
         };
+        if (searchimdbID !== null) movie.imdbID = searchimdbID[1];
+
         movies.push(movie);
       });
       return movies;
